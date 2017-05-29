@@ -1,5 +1,5 @@
 from os.path import isfile
-from numpy import array, ndarray, uint8, \
+from numpy import array, ndarray, uint8, int32, pi, \
     zeros, zeros_like
 from cv2 import Canny, GaussianBlur, HoughLinesP, \
     imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
@@ -97,7 +97,7 @@ class LaneFilter(object):
                 (int(x_width/2 - x_offset), int(y_height/2 + y_offset)),
                 (int(x_width/2 + x_offset), int(y_height/2 + y_offset)),
                 (x_width - 1, y_height - 1)
-            ], dtype=np.int32)
+            ], dtype=int32)
         self.mask = zeros_like(image)
         # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
         if len(image.shape) > 2:
@@ -123,7 +123,7 @@ class LaneFilter(object):
         if image is not None:
             assert image.shape == self.image.shape, 'images must be same shape, to draw lines'
             self.image_tf = image
-        y_height, x_width, channels = self.image_tf.shape
+        y_height, x_width, channels = self.image.shape
         self.image_tf = zeros((y_height, x_width, channels), dtype=uint8)
         # assign default color
         if color is None:
@@ -134,8 +134,8 @@ class LaneFilter(object):
                 line(self.image_tf, (x1, y1), (x2, y2), color, thickness)
         return self.image_tf
 
-    def hough_lines(self, rho: float, theta: float, threshold: int, min_line_len: float, max_line_gap: float,
-                    image=None, with_lines=True) -> ndarray:
+    def hough_lines(self, rho: float, threshold: int, min_line_len: float, max_line_gap: float,
+                    theta=pi/180, image=None, with_lines=True) -> ndarray:
         '''
         Hough transformed image
         :param image: numpy.ndarray input image
