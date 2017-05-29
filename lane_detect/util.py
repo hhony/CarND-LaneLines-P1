@@ -42,7 +42,7 @@ class LaneFilter(object):
                                     cv2.COLOR_BGR2GRAY with cv2.imread()
         :return: numpy.ndarray
         '''
-        if image:
+        if image is not None:
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
             return cvtColor(image, color_order)
         self.gray = cvtColor(self.image, color_order)
@@ -55,7 +55,7 @@ class LaneFilter(object):
         :param kernel: tuple kernel size
         :return: numpy.ndarray
         '''
-        if image:
+        if image is not None:
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for gaussian blur'
             return GaussianBlur(image, kernel, 0)
         self.image_tf = GaussianBlur(self.gray, kernel, 0)
@@ -69,11 +69,12 @@ class LaneFilter(object):
         :param high_threshold:  upper bound
         :return: numpy.ndarray
         '''
-        if image:
+        if image is None:
+            self.image_tf = Canny(self.image_tf, low_threshold, high_threshold)
+            return  self.image_tf
+        else:
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for canny edges'
-            return Canny(image, low_threshold, high_threshold)
-        self.image_tf = Canny(self.image_tf, low_threshold, high_threshold)
-        return  self.image_tf
+        return Canny(image, low_threshold, high_threshold)
 
     def get_roi_mask(self, image=None, vertices=None) -> ndarray:
         '''
@@ -82,10 +83,10 @@ class LaneFilter(object):
         :param vertices: numpy.ndarry of x,y tuples
         :return: numpy.ndarray
         '''
-        if image:
-            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, to get roi mask'
-        else:
+        if image is None:
             image = self.image
+        else:
+            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, to get roi mask'
         #defining a blank mask to start with
         if vertices is None:
             x_offset = 10
@@ -119,7 +120,7 @@ class LaneFilter(object):
         :param color: tuple (r, g, b) uint8
         :param thickness: pixel width of highlight
         '''
-        if image:
+        if image is not None:
             assert image.shape == self.image.shape, 'images must be same shape, to draw lines'
             self.image_tf = image
         y_height, x_width, channels = self.image_tf.shape
@@ -146,16 +147,16 @@ class LaneFilter(object):
         :param with_lines:      if draw line segments on output if true
         :return: numpy.ndarray
         '''
-        if image:
-            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for hough tf'
-        else:
+        if image is None:
             image = self.image_tf
+        else:
+            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for hough tf'
         hough_tf = HoughLinesP(image, rho, theta, threshold, array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
         if with_lines:
             return self.draw_lines(lines=hough_tf)
         return hough_tf
 
-    def weighted_image(self, image_tf: ndarray, α=0.8, β=1., λ=0.) -> ndarray:
+    def weighted_image(self, image_tf=None, α=0.8, β=1., λ=0.) -> ndarray:
         '''
         Matrix Sum, α(image_src) + β(image_tf) + λ
         :param image_tf: hough tf output image
@@ -164,5 +165,8 @@ class LaneFilter(object):
         :param λ: offset translation
         :return: numpy.ndarray
         '''
-        assert image_tf.shape == self.image.shape, 'must be same shape!'
-        return addWeighted(self.image, α, image_tf, β, λ)
+        if image_tf is not None:
+            self.image_tf = image_tf
+        assert self.image_tf.shape == self.image.shape, 'must be same shape!'
+        self.lane = addWeighted(self.image, α, self.image_tf, β, λ)
+        return self.lane
