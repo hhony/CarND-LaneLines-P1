@@ -2,25 +2,39 @@ from os.path import isfile
 from numpy import array, ndarray, uint8, \
     zeros, zeros_like
 from cv2 import Canny, GaussianBlur, HoughLinesP, \
-    imread, cvtColor, COLOR_BGR2GRAY, \
+    imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
     fillPoly, line, \
     bitwise_and, addWeighted
 
 
 class LaneFilter(object):
     def __init__(self, image=None, filename=None):
+        '''
+        LaneFilter will perform image transforms on itself
+        :param image: <numpy.nd_array>
+        :param filename: file path <str>
+        '''
         if filename:
             assert issubclass(str, type(filename)), 'image path must be <str>'
             if isfile(filename):
                 self.image = imread(filename)
-                self.image = self.grayscale(COLOR_BGR2GRAY)
+                self.image_tf = zeros_like(self.image)
+                self.gray = self.grayscale(image=self.image, color_order=COLOR_BGR2GRAY)
+                self.mask = zeros_like(self.image)
+                self.lane = zeros_like(self.image)
             else:
                 RuntimeError('{0} not found.'.format(filename))
         elif image:
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
             self.image = image
+            self.image_tf = zeros_like(self.image)
+            self.gray = self.grayscale(image=self.image)
+            self.mask = zeros_like(self.image)
+            self.lane = zeros_like(self.image)
+        else:
+            raise RuntimeError('must provide either filename <str> or image <numpy.ndarray>')
 
-    def grayscale(self, color_order: int, image=None) -> ndarray:
+    def grayscale(self, image=None, color_order=COLOR_RGB2GRAY) -> ndarray:
         '''
         Applies the Grayscale transform
         :param image: numpy.ndarray input image, video/x-raw dimension
@@ -31,20 +45,8 @@ class LaneFilter(object):
         if image:
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
             return cvtColor(image, color_order)
-        return cvtColor(self.image, color_order)
-
-    def canny(self, low_threshold: int, high_threshold: int, image=None) -> ndarray:
-        '''
-        Applies the Canny transform
-        :param image: numpy.ndarray
-        :param low_threshold:   lower bound
-        :param high_threshold:  upper bound
-        :return: numpy.ndarray
-        '''
-        if image:
-            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
-            return Canny(image, low_threshold, high_threshold)
-        return Canny(self.image, low_threshold, high_threshold)
+        self.gray = cvtColor(self.image, color_order)
+        return self.gray
 
     def gaussian_blur(self, image=None, kernel=(5,5)) -> ndarray:
         '''
@@ -54,9 +56,24 @@ class LaneFilter(object):
         :return: numpy.ndarray
         '''
         if image:
-            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
+            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for gaussian blur'
             return GaussianBlur(image, kernel, 0)
-        return GaussianBlur(self.image, kernel, 0)
+        self.image_tf = GaussianBlur(self.gray, kernel, 0)
+        return self.image_tf
+
+    def canny_edges(self, low_threshold: int, high_threshold: int, image=None) -> ndarray:
+        '''
+        Applies the Canny transform
+        :param image: numpy.ndarray
+        :param low_threshold:   lower bound
+        :param high_threshold:  upper bound
+        :return: numpy.ndarray
+        '''
+        if image:
+            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for canny edges'
+            return Canny(image, low_threshold, high_threshold)
+        self.image_tf = Canny(self.image_tf, low_threshold, high_threshold)
+        return  self.image_tf
 
     def get_roi_mask(self, image=None, vertices=None) -> ndarray:
         '''
@@ -66,7 +83,7 @@ class LaneFilter(object):
         :return: numpy.ndarray
         '''
         if image:
-            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
+            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, to get roi mask'
         else:
             image = self.image
         #defining a blank mask to start with
@@ -80,20 +97,20 @@ class LaneFilter(object):
                 (int(x_width/2 + x_offset), int(y_height/2 + y_offset)),
                 (x_width - 1, y_height - 1)
             ], dtype=np.int32)
-        mask = zeros_like(image)
+        self.mask = zeros_like(image)
         # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
         if len(image.shape) > 2:
             [_, _, channels] = image.shape # i.e. 3 or 4 depending on your image
-            ignore_mask_color = (255,) * channels
+            _mask_color = (255,) * channels
         else:
-            ignore_mask_color = 255
+            _mask_color = 255
         # filling pixels inside the polygon defined by "vertices" with the fill color
-        fillPoly(mask, vertices, ignore_mask_color)
+        fillPoly(self.mask, vertices, _mask_color)
         # image only where mask pixels are nonzero
-        masked_image = bitwise_and(image, mask)
-        return masked_image
+        self.mask = bitwise_and(image, self.mask)
+        return self.mask
 
-    def draw_lines(self, image: ndarray, lines: ndarray, color=None, thickness=2):
+    def draw_lines(self, lines: ndarray, image=None, color=None, thickness=2) -> ndarray:
         '''
         Lines are drawn on the image inplace.
         """
@@ -102,12 +119,19 @@ class LaneFilter(object):
         :param color: tuple (r, g, b) uint8
         :param thickness: pixel width of highlight
         '''
+        if image:
+            assert image.shape == self.image.shape, 'images must be same shape, to draw lines'
+            self.image_tf = image
+        y_height, x_width, channels = self.image_tf.shape
+        self.image_tf = zeros((y_height, x_width, channels), dtype=uint8)
+        # assign default color
         if color is None:
             color = [255, 0, 0]
-
+        # draw lines
         for _line in lines:
             for x1,y1,x2,y2 in _line:
-                line(image, (x1, y1), (x2, y2), color, thickness)
+                line(self.image_tf, (x1, y1), (x2, y2), color, thickness)
+        return self.image_tf
 
     def hough_lines(self, rho: float, theta: float, threshold: int, min_line_len: float, max_line_gap: float,
                     image=None, with_lines=True) -> ndarray:
@@ -123,15 +147,12 @@ class LaneFilter(object):
         :return: numpy.ndarray
         '''
         if image:
-            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
+            assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for hough tf'
         else:
-            image = self.image
-        y_height, x_width, channels = image.shape
+            image = self.image_tf
         hough_tf = HoughLinesP(image, rho, theta, threshold, array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
         if with_lines:
-            line_image = zeros((y_height, x_width, channels), dtype=uint8)
-            self.draw_lines(line_image, hough_tf)
-            return line_image
+            return self.draw_lines(lines=hough_tf)
         return hough_tf
 
     def weighted_image(self, image_tf: ndarray, α=0.8, β=1., λ=0.) -> ndarray:
