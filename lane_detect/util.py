@@ -79,8 +79,8 @@ class LaneFilter(object):
     def get_roi_mask(self, image=None, vertices=None) -> ndarray:
         '''
         Masks a region of interest
-        :param image: numpy.ndarry input image
-        :param vertices: numpy.ndarry of x,y tuples
+        :param image: numpy.ndarray input image
+        :param vertices: numpy.ndarray of x,y tuples
         :return: numpy.ndarray
         '''
         if image is None:
@@ -90,7 +90,7 @@ class LaneFilter(object):
         #defining a blank mask to start with
         if vertices is None:
             x_offset = 10
-            y_offset = 10
+            y_offset = 45
             [y_height, x_width, _] = image.shape
             vertices = array([
                 (0, y_height - 1),
@@ -106,7 +106,10 @@ class LaneFilter(object):
         else:
             _mask_color = 255
         # filling pixels inside the polygon defined by "vertices" with the fill color
-        fillPoly(self.mask, int32([vertices]), _mask_color)
+        if vertices.dtype.name != 'int32':
+            fillPoly(self.mask, int32([vertices]), _mask_color)
+        else:
+            fillPoly(self.mask, [vertices], _mask_color)
         # image only where mask pixels are nonzero
         self.mask = bitwise_and(image, self.mask)
         return self.mask
