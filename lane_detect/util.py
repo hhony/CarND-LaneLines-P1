@@ -5,6 +5,7 @@ from cv2 import Canny, GaussianBlur, HoughLinesP, \
     imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
     fillPoly, line, \
     bitwise_and, addWeighted
+from lane_detect.log import logger
 
 
 class LaneFilter(object):
@@ -138,8 +139,11 @@ class LaneFilter(object):
         if color is None:
             color = [255, 0, 0]
         # draw lines
+        logger.debug('-----------------------------------------')
         for _line in lines:
             for x1,y1,x2,y2 in _line:
+                m = (y2-y1) / (x2-x1)
+                logger.debug('slope: %s: %s', (x1,y1,x2,y2), m)
                 line(self.image_tf, (x1, y1), (x2, y2), color, thickness)
         return self.image_tf
 

@@ -1,17 +1,59 @@
 #!/usr/bin/env python3
-from lane_detect.util import LaneFilter
-from lane_detect.plot import show_image
+import argparse
+from os import listdir
+from lane_detect import LaneFilter, show_image, \
+    logger, set_debug_flag
 
 if __name__ == '__main__':
-    filter = LaneFilter(filename='test_images/solidWhiteRight.jpg')
-    show_image(filter.image)
-    filter.gaussian_blur()
-    show_image(filter.image_tf)
-    filter.canny_edges(50, 150)
-    show_image(filter.image_tf)
-    filter.hough_lines(rho=2, threshold=15, min_line_len=40, max_line_gap=10, with_lines=True)
-    show_image(filter.image_tf)
-    filter.apply_roi_mask()
-    show_image(filter.image_tf)
-    filter.weighted_image()
-    show_image(filter.lane)
+    CANNY_LOWER_BOUND = 50
+    CANNY_UPPER_BOUND = 150
+    HOUGH_RHO         = 2
+    HOUGH_THRESH      = 15
+    HOUGH_LINE_LEN    = 40
+    HOUGH_LINE_GAP    = 10
+
+    parser = argparse.ArgumentParser(
+        description='utility for ensuring knit embedded app is installed and running')
+    parser.add_argument(
+        '-d', '--debug', '--debug-mode', '--dev', '--dev-mode',
+        dest='is_debug', action='store_true',
+        help='enables debug logging.'
+    )
+    parser.add_argument(
+        '--show-pipeline',
+        dest='show_pipeline', action='store_true',
+        help='show all pipeline stages'
+    )
+    parser.add_argument(
+        '--show-lines',
+        dest='show_lines', action='store_true',
+        help='show hough lines stages'
+    )
+    parser.parse_args()
+    args = parser.parse_args()
+    if args.is_debug:
+        set_debug_flag()
+    try:
+        _files = listdir('test_images')
+        for _f in _files:
+            filter = LaneFilter(filename='test_images/{0}'.format(_f))
+            if args.show_pipeline:
+                show_image(filter.image)
+            filter.gaussian_blur()
+            if args.show_pipeline:
+                show_image(filter.image_tf)
+            filter.canny_edges(CANNY_LOWER_BOUND, CANNY_UPPER_BOUND)
+            if args.show_pipeline:
+                show_image(filter.image_tf)
+            filter.hough_lines(rho=HOUGH_RHO, threshold=HOUGH_THRESH,
+                               min_line_len=HOUGH_LINE_LEN, max_line_gap=HOUGH_LINE_GAP,
+                               with_lines=True)
+            if args.show_pipeline or args.show_lines:
+                show_image(filter.image_tf)
+            filter.apply_roi_mask()
+            if args.show_pipeline:
+                show_image(filter.image_tf)
+            filter.weighted_image()
+            show_image(filter.lane)
+    except Exception as err:
+        logger.error('caught exception: %s', err)
