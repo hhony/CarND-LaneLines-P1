@@ -106,10 +106,16 @@ class LaneFilter(object):
         else:
             _mask_color = 255
         # filling pixels inside the polygon defined by "vertices" with the fill color
-        fillPoly(self.mask, vertices, _mask_color)
+        fillPoly(self.mask, int32([vertices]), _mask_color)
         # image only where mask pixels are nonzero
         self.mask = bitwise_and(image, self.mask)
         return self.mask
+
+    def apply_roi_mask(self, image=None):
+        if image is not None:
+            assert self.image.shape == image.shape, 'images must be same shape, for roi to work'
+            self.image_tf = image
+        self.image_tf = bitwise_and(self.image_tf, self.get_roi_mask())
 
     def draw_lines(self, lines: ndarray, image=None, color=None, thickness=2) -> ndarray:
         '''

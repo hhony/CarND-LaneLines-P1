@@ -11,5 +11,7 @@ if __name__ == '__main__':
     show_image(filter.image_tf)
     filter.hough_lines(rho=1, threshold=20, min_line_len=50, max_line_gap=3, with_lines=True)
     show_image(filter.image_tf)
+    filter.apply_roi_mask()
+    show_image(filter.image_tf)
     filter.weighted_image()
     show_image(filter.lane)
