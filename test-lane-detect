@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+from lane_detect.util import LaneFilter
+from lane_detect.plot import show_image
+
+if __name__ == '__main__':
+    filter = LaneFilter(filename='test_images/solidWhiteRight.jpg')
+    show_image(filter.image)
+    filter.gaussian_blur()
+    show_image(filter.image_tf)
+    filter.canny_edges(50, 150)
+    show_image(filter.image_tf)
+    filter.hough_lines(rho=1, threshold=20, min_line_len=50, max_line_gap=3, with_lines=True)
+    show_image(filter.image_tf)
+    filter.weighted_image()
+    show_image(filter.lane)
