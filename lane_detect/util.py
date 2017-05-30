@@ -1,6 +1,6 @@
 from os.path import isfile
 from numpy import array, ndarray, uint8, int32, pi, \
-    zeros, zeros_like
+    sqrt, square, zeros, zeros_like
 from cv2 import Canny, GaussianBlur, HoughLinesP, \
     imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
     fillPoly, line, \
@@ -139,11 +139,31 @@ class LaneFilter(object):
         if color is None:
             color = [255, 0, 0]
         # draw lines
-        logger.debug('-----------------------------------------')
+        logger.debug('-------------------------------------------------------------')
+        SLOPE_THRESHOLD  = 0.4
+        SLOPE_VARIANCE   = 0.025
+        MAGNITUDE_THRESH = 100
+        max_signal = 0; max_slope = 0; i = 0
+        _signals = {}
+        # quantify signals
         for _line in lines:
-            for x1,y1,x2,y2 in _line:
-                m = (y2-y1) / (x2-x1)
-                logger.debug('slope: %s: %s', (x1,y1,x2,y2), m)
+            for x1, y1, x2, y2 in _line:
+                slope = (y2-y1) / (x2-x1)
+                magnitude = sqrt((square(x2 - x1) + square(y2 - y1)))
+                if magnitude > MAGNITUDE_THRESH:
+                    if slope > SLOPE_THRESHOLD or slope < -SLOPE_THRESHOLD:
+                        logger.debug('points: %s\t slope: %6.3f\t magnitude: %6.3f', (x1, y1, x2, y2), slope, magnitude)
+                        if magnitude > max_signal:
+                            max_slope = abs(slope)
+                            max_signal = magnitude
+                        _signals[i] = [slope, magnitude, (x1, y1), (x2, y2)]
+                else:
+                    _signals[i] = [slope, magnitude, (x1, y1), (x2, y2)]
+                i = i + 1
+        # use accumulated signals
+        for _line in _signals:
+            [_slope, _, (x1, y1), (x2, y2)] = _signals[_line]
+            if (abs(_slope) > max_slope - SLOPE_VARIANCE) or (abs(_slope) < max_slope + SLOPE_VARIANCE):
                 line(self.image_tf, (x1, y1), (x2, y2), color, thickness)
         return self.image_tf
 
