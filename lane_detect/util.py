@@ -35,13 +35,13 @@ class LaneFilter(object):
         else:
             raise RuntimeError('must provide either filename <str> or image <numpy.ndarray>')
         # define default ROI
-        X_OFFSET = 20                              # this shape   ___
-        Y_OFFSET = 50                              # seems good  /   \
+        self.X_OFFSET = 20                         # this shape   ___
+        self.Y_OFFSET = 50                         # seems good  /   \
         [y_height, x_width, _] = self.image.shape  # why break  /     \
         self.roi = array([                         # it?       /_______\
             (0, y_height - 1),
-            (int(x_width / 2 - X_OFFSET), int(y_height / 2 + Y_OFFSET)),
-            (int(x_width / 2 + X_OFFSET), int(y_height / 2 + Y_OFFSET)),
+            (int(x_width / 2 - self.X_OFFSET), int(y_height / 2 + self.Y_OFFSET)),
+            (int(x_width / 2 + self.X_OFFSET), int(y_height / 2 + self.Y_OFFSET)),
             (x_width - 1, y_height - 1)
         ], dtype=int32)
 
@@ -164,12 +164,16 @@ class LaneFilter(object):
                 i = i + 1
         # use accumulated signals
         bool_mask = array(self.get_roi_mask(), dtype=bool)
+        upper_bound = int(y_height/2 + self.Y_OFFSET)
         for _line in _signals:
-            [_slope, _, (x1, y1), (x2, y2)] = _signals[_line]
-            if (abs(_slope) > max_slope - SLOPE_VARIANCE) or (abs(_slope) < max_slope + SLOPE_VARIANCE):
-                if bool_mask[y1][x1][0] or bool_mask[y2][x2][0]:
+            [_slope, _, (x1,y1), (x2,y2)] = _signals[_line]
+            if (abs(_slope) >= max_slope - SLOPE_VARIANCE) or (abs(_slope) <= max_slope + SLOPE_VARIANCE):
+                if bool_mask[y1][x1][0] and bool_mask[y2][x2][0]:
                     logger.debug('%s: %s\t %s: %s', (x1, y1), bool_mask[y1][x1][0], (x2, y2), bool_mask[y2][x2][0])
-                    line(self.image_tf, (x1, y1), (x2, y2), color, thickness)
+                    _offset = float(y1/_slope - x1)
+                    new_p1 = (int(upper_bound/_slope - _offset), upper_bound)
+                    new_p2 = (int((y_height-1) /_slope - _offset), (y_height-1))
+                    line(self.image_tf, new_p1, new_p2, color, thickness)
         return self.image_tf
 
     def hough_lines(self, rho: float, threshold: int, min_line_len: float, max_line_gap: float,
