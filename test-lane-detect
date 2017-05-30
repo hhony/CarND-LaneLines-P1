@@ -38,19 +38,21 @@ if __name__ == '__main__':
         for _f in _files:
             filter = LaneFilter(filename='test_images/{0}'.format(_f))
             if args.show_pipeline:
-                show_image(filter.image)
+                show_image(filter.image, gray=True)
             filter.gaussian_blur()
             if args.show_pipeline:
-                show_image(filter.image_tf)
+                show_image(filter.image_tf, gray=True)
             filter.canny_edges(CANNY_LOWER_BOUND, CANNY_UPPER_BOUND)
             if args.show_pipeline:
-                show_image(filter.image_tf)
+                show_image(filter.image_tf, gray=True)
             filter.hough_lines(rho=HOUGH_RHO, threshold=HOUGH_THRESH,
                                min_line_len=HOUGH_LINE_LEN, max_line_gap=HOUGH_LINE_GAP,
                                with_lines=True)
             if args.show_pipeline or args.show_lines:
                 show_image(filter.image_tf)
             filter.apply_roi_mask()
+            if args.show_pipeline or args.show_lines:
+                show_image(filter.image_tf)
             if args.show_pipeline:
                 show_image(filter.image_tf)
             filter.weighted_image()
