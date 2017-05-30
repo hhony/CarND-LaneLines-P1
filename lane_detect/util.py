@@ -34,6 +34,16 @@ class LaneFilter(object):
             self.lane = zeros_like(self.image)
         else:
             raise RuntimeError('must provide either filename <str> or image <numpy.ndarray>')
+        # define default ROI
+        X_OFFSET = 20                              # this shape   ___
+        Y_OFFSET = 50                              # seems good  /   \
+        [y_height, x_width, _] = self.image.shape  # why break  /     \
+        self.roi = array([                         # it?       /_______\
+            (0, y_height - 1),
+            (int(x_width / 2 - X_OFFSET), int(y_height / 2 + Y_OFFSET)),
+            (int(x_width / 2 + X_OFFSET), int(y_height / 2 + Y_OFFSET)),
+            (x_width - 1, y_height - 1)
+        ], dtype=int32)
 
     def grayscale(self, image=None, color_order=COLOR_RGB2GRAY) -> ndarray:
         '''
@@ -90,15 +100,7 @@ class LaneFilter(object):
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, to get roi mask'
         #defining a blank mask to start with
         if vertices is None:
-            x_offset = 10
-            y_offset = 45
-            [y_height, x_width, _] = image.shape
-            vertices = array([
-                (0, y_height - 1),
-                (int(x_width/2 - x_offset), int(y_height/2 + y_offset)),
-                (int(x_width/2 + x_offset), int(y_height/2 + y_offset)),
-                (x_width - 1, y_height - 1)
-            ], dtype=int32)
+            vertices = self.roi
         self.mask = zeros_like(image)
         # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
         if len(image.shape) > 2:
@@ -161,10 +163,13 @@ class LaneFilter(object):
                     _signals[i] = [slope, magnitude, (x1, y1), (x2, y2)]
                 i = i + 1
         # use accumulated signals
+        bool_mask = array(self.get_roi_mask(), dtype=bool)
         for _line in _signals:
             [_slope, _, (x1, y1), (x2, y2)] = _signals[_line]
             if (abs(_slope) > max_slope - SLOPE_VARIANCE) or (abs(_slope) < max_slope + SLOPE_VARIANCE):
-                line(self.image_tf, (x1, y1), (x2, y2), color, thickness)
+                if bool_mask[y1][x1][0] or bool_mask[y2][x2][0]:
+                    logger.debug('%s: %s\t %s: %s', (x1, y1), bool_mask[y1][x1][0], (x2, y2), bool_mask[y2][x2][0])
+                    line(self.image_tf, (x1, y1), (x2, y2), color, thickness)
         return self.image_tf
 
     def hough_lines(self, rho: float, threshold: int, min_line_len: float, max_line_gap: float,
