@@ -6,7 +6,7 @@ from cv2 import Canny, GaussianBlur, HoughLinesP, \
     fillPoly, line, \
     bitwise_and, addWeighted
 from lane_detect.line_math import find_dominate_signals, interpolate_dominate_lines, \
-    get_slope_stats, sort_slopes
+    convert_lane_edges_to_polygons
 from lane_detect.log import logger
 
 
@@ -149,17 +149,12 @@ class LaneFilter(object):
         # use accumulated signals
         bool_mask   = array(self.get_roi_mask(), dtype=bool)
         lower_bound = int(y_height/2 + self.Y_OFFSET)
-        _slots = interpolate_dominate_lines(bool_mask, _signals, max_slope, lower_bound, int(y_height - 1))
-        for _line in _slots:
-            _index, _slope, new_p1, new_p2 = _slots[_line]
-            line(self.image_tf, new_p1, new_p2, color, thickness)
-        # apply slopes on filtered lines
-        lane_sides = sort_slopes(_slots)
-        logger.debug('sides: %s', lane_sides)
-        # average into polygon(s)
-        slope_stats = get_slope_stats(lane_sides)
-        logger.debug('stats: %s', slope_stats)
-
+        upper_bound = int(y_height - 1)
+        _slots = interpolate_dominate_lines(bool_mask, _signals, max_slope, lower_bound, upper_bound)
+        _right_lane, _left_lane = convert_lane_edges_to_polygons(_slots, lower_bound, upper_bound)
+        # fill lane polygons on images
+        fillPoly(self.image_tf, int32([_right_lane]), color)
+        fillPoly(self.image_tf, int32([_left_lane]), color)
         return self.image_tf
 
     def hough_lines(self, rho: float, threshold: int, min_line_len: float, max_line_gap: float,
