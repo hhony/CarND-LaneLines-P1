@@ -1,10 +1,12 @@
 from os.path import isfile
 from numpy import array, ndarray, uint8, int32, pi, \
-    sqrt, square, zeros, zeros_like
+    zeros, zeros_like
 from cv2 import Canny, GaussianBlur, HoughLinesP, \
     imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
     fillPoly, line, \
     bitwise_and, addWeighted
+from lane_detect.line_math import find_dominate_signals, interpolate_dominate_lines, \
+    get_slope_stats, sort_slopes
 from lane_detect.log import logger
 
 
@@ -142,38 +144,22 @@ class LaneFilter(object):
             color = [255, 0, 0]
         # draw lines
         logger.debug('-------------------------------------------------------------')
-        SLOPE_THRESHOLD  = 0.4
-        SLOPE_VARIANCE   = 0.025
-        MAGNITUDE_THRESH = 100
-        max_signal = 0; max_slope = 0; i = 0
-        _signals = {}
         # quantify signals
-        for _line in lines:
-            for x1, y1, x2, y2 in _line:
-                slope = (y2-y1) / (x2-x1)
-                magnitude = sqrt((square(x2 - x1) + square(y2 - y1)))
-                if magnitude > MAGNITUDE_THRESH:
-                    if slope > SLOPE_THRESHOLD or slope < -SLOPE_THRESHOLD:
-                        logger.debug('points: %s\t slope: %6.3f\t magnitude: %6.3f', (x1, y1, x2, y2), slope, magnitude)
-                        if magnitude > max_signal:
-                            max_slope = abs(slope)
-                            max_signal = magnitude
-                        _signals[i] = [slope, magnitude, (x1, y1), (x2, y2)]
-                else:
-                    _signals[i] = [slope, magnitude, (x1, y1), (x2, y2)]
-                i = i + 1
+        max_slope, _signals = find_dominate_signals(lines)
         # use accumulated signals
-        bool_mask = array(self.get_roi_mask(), dtype=bool)
-        upper_bound = int(y_height/2 + self.Y_OFFSET)
-        for _line in _signals:
-            [_slope, _, (x1,y1), (x2,y2)] = _signals[_line]
-            if (abs(_slope) >= max_slope - SLOPE_VARIANCE) or (abs(_slope) <= max_slope + SLOPE_VARIANCE):
-                if bool_mask[y1][x1][0] and bool_mask[y2][x2][0]:
-                    logger.debug('%s: %s\t %s: %s', (x1, y1), bool_mask[y1][x1][0], (x2, y2), bool_mask[y2][x2][0])
-                    _offset = float(y1/_slope - x1)
-                    new_p1 = (int(upper_bound/_slope - _offset), upper_bound)
-                    new_p2 = (int((y_height-1) /_slope - _offset), (y_height-1))
-                    line(self.image_tf, new_p1, new_p2, color, thickness)
+        bool_mask   = array(self.get_roi_mask(), dtype=bool)
+        lower_bound = int(y_height/2 + self.Y_OFFSET)
+        _slots = interpolate_dominate_lines(bool_mask, _signals, max_slope, lower_bound, int(y_height - 1))
+        for _line in _slots:
+            _index, _slope, new_p1, new_p2 = _slots[_line]
+            line(self.image_tf, new_p1, new_p2, color, thickness)
+        # apply slopes on filtered lines
+        lane_sides = sort_slopes(_slots)
+        logger.debug('sides: %s', lane_sides)
+        # average into polygon(s)
+        slope_stats = get_slope_stats(lane_sides)
+        logger.debug('stats: %s', slope_stats)
+
         return self.image_tf
 
     def hough_lines(self, rho: float, threshold: int, min_line_len: float, max_line_gap: float,
