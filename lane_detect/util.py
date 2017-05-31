@@ -45,6 +45,8 @@ class LaneFilter(object):
             (int(x_width / 2 + self.X_OFFSET), int(y_height / 2 + self.Y_OFFSET)),
             (x_width - 1, y_height - 1)
         ], dtype=int32)
+        self.left_lane  = None
+        self.right_lane = None
 
     def grayscale(self, image=None, color_order=COLOR_RGB2GRAY) -> ndarray:
         '''
@@ -151,10 +153,10 @@ class LaneFilter(object):
         lower_bound = int(y_height/2 + self.Y_OFFSET)
         upper_bound = int(y_height - 1)
         _slots = interpolate_dominate_lines(region_mask, _signals, mean_slope, lower_bound, upper_bound)
-        _right_lane, _left_lane = convert_lane_edges_to_polygons(_slots, lower_bound, upper_bound)
+        self.right_lane, self.left_lane = convert_lane_edges_to_polygons(_slots, lower_bound, upper_bound)
         # fill lane polygons on images
-        fillPoly(self.image_tf, int32([_right_lane]), color)
-        fillPoly(self.image_tf, int32([_left_lane]), color)
+        fillPoly(self.image_tf, int32([self.right_lane]), color)
+        fillPoly(self.image_tf, int32([self.left_lane]), color)
         return self.image_tf
 
     def hough_lines(self, rho: float, threshold: int, min_line_len: float, max_line_gap: float,
