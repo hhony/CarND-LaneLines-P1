@@ -53,7 +53,7 @@ class LaneFilter(object):
         :param image: numpy.ndarray input image, video/x-raw dimension
         :param color_order: int     cv2.COLOR_RGB2GRAY,
                                     cv2.COLOR_BGR2GRAY with cv2.imread()
-        :return: numpy.ndarray
+        :return: <numpy.ndarray>
         '''
         if image is not None:
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
@@ -66,7 +66,7 @@ class LaneFilter(object):
         Applies a Gaussian Noise kernel
         :param image: numpy.ndarray input image
         :param kernel: tuple kernel size
-        :return: numpy.ndarray
+        :return: <numpy.ndarray>
         '''
         if image is not None:
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>, for gaussian blur'
@@ -80,7 +80,7 @@ class LaneFilter(object):
         :param image: numpy.ndarray
         :param low_threshold:   lower bound
         :param high_threshold:  upper bound
-        :return: numpy.ndarray
+        :return: <numpy.ndarray>
         '''
         if image is None:
             self.image_tf = Canny(self.image_tf, low_threshold, high_threshold)
@@ -94,7 +94,7 @@ class LaneFilter(object):
         Masks a region of interest
         :param image: numpy.ndarray input image
         :param vertices: numpy.ndarray of x,y tuples
-        :return: numpy.ndarray
+        :return: <numpy.ndarray>
         '''
         if image is None:
             image = self.image
@@ -133,6 +133,7 @@ class LaneFilter(object):
         :param lines: numpy.ndarray of tuple (x1,y1,x2,y2)
         :param color: tuple (r, g, b) uint8
         :param thickness: pixel width of highlight
+        :return <numpy.ndarray>
         '''
         if image is not None:
             assert image.shape == self.image.shape, 'images must be same shape, to draw lines'
@@ -168,7 +169,7 @@ class LaneFilter(object):
         :param min_line_len:    minimum number of pixels to compose line
         :param max_line_gap:    maximum gap in pixels between line segments
         :param with_lines:      if draw line segments on output if true
-        :return: numpy.ndarray
+        :return: <numpy.ndarray>
         '''
         if image is None:
             image = self.image_tf
@@ -186,7 +187,7 @@ class LaneFilter(object):
         :param α: scalar image_src
         :param β: scalar image_tf
         :param λ: offset translation
-        :return: numpy.ndarray
+        :return: <numpy.ndarray>
         '''
         if image_tf is not None:
             self.image_tf = image_tf
