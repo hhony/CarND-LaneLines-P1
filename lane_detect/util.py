@@ -13,7 +13,7 @@ class LaneFilter(object):
     def __init__(self, image=None, filename=None):
         '''
         LaneFilter will perform image transforms on itself
-        :param image: <numpy.nd_array>
+        :param image: <numpy.ndarray>
         :param filename: file path <str>
         '''
         if filename:
@@ -63,7 +63,7 @@ class LaneFilter(object):
     def gaussian_blur(self, image=None, kernel=(5,5)) -> ndarray:
         '''
         Applies a Gaussian Noise kernel
-        :param image: numpy.ndarray input image
+        :param image:  numpy.ndarray input image
         :param kernel: tuple kernel size
         :return: <numpy.ndarray>
         '''
@@ -77,8 +77,8 @@ class LaneFilter(object):
         '''
         Applies the Canny transform
         :param image: numpy.ndarray
-        :param low_threshold:   lower bound
-        :param high_threshold:  upper bound
+        :param low_threshold:  lower bound
+        :param high_threshold: upper bound
         :return: <numpy.ndarray>
         '''
         if image is None:
@@ -91,8 +91,8 @@ class LaneFilter(object):
     def get_roi_mask(self, image=None, vertices=None) -> ndarray:
         '''
         Masks a region of interest
-        :param image: numpy.ndarray input image
-        :param vertices: numpy.ndarray of x,y tuples
+        :param image:    numpy.ndarray input image
+        :param vertices: numpy.ndarray of (x,y) tuples
         :return: <numpy.ndarray>
         '''
         if image is None:
@@ -128,9 +128,9 @@ class LaneFilter(object):
         '''
         Lines are drawn on the image inplace.
         """
-        :param image: image to apply lines
-        :param lines: numpy.ndarray of tuple (x1,y1,x2,y2)
-        :param color: tuple (r, g, b) uint8
+        :param image:     image to apply lines
+        :param lines:     numpy.ndarray of tuple (x1,y1,x2,y2)
+        :param color:     tuple (r, g, b) uint8
         :param thickness: pixel width of highlight
         :return <numpy.ndarray>
         '''
@@ -145,12 +145,12 @@ class LaneFilter(object):
         # draw lines
         logger.debug('-------------------------------------------------------------')
         # quantify signals
-        max_slope, _signals = find_dominate_signals(lines)
+        mean_slope, _signals = find_dominate_signals(lines)
         # use accumulated signals
-        bool_mask   = array(self.get_roi_mask(), dtype=bool)
+        region_mask = array(self.get_roi_mask(), dtype=bool)
         lower_bound = int(y_height/2 + self.Y_OFFSET)
         upper_bound = int(y_height - 1)
-        _slots = interpolate_dominate_lines(bool_mask, _signals, max_slope, lower_bound, upper_bound)
+        _slots = interpolate_dominate_lines(region_mask, _signals, mean_slope, lower_bound, upper_bound)
         _right_lane, _left_lane = convert_lane_edges_to_polygons(_slots, lower_bound, upper_bound)
         # fill lane polygons on images
         fillPoly(self.image_tf, int32([_right_lane]), color)
