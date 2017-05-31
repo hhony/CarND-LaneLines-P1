@@ -3,8 +3,7 @@ from numpy import array, ndarray, uint8, int32, pi, \
     zeros, zeros_like
 from cv2 import Canny, GaussianBlur, HoughLinesP, \
     imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
-    fillPoly, line, \
-    bitwise_and, addWeighted
+    fillPoly, bitwise_and, addWeighted
 from lane_detect.line_math import find_dominate_signals, interpolate_dominate_lines, \
     convert_lane_edges_to_polygons
 from lane_detect.log import logger
