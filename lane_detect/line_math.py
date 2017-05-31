@@ -40,21 +40,26 @@ def get_slope_stats(slopes: list) -> list:
     try:
         for _slopes in slopes:
             _min = 0.0; _max = 0.0
-            _lane = 0; _stdev = []
-            for _slope in _slopes:
-                if _slope < 0:
-                    _lane = 'right'
-                else:
-                    _lane = 'left'
-                _min = min(_slope, _min)
-                _max = max(_slope, _max)
-            _mean = sum(_slopes) / len(_slopes)
-            for _slope in _slopes:
-                _stdev.append(square(_slope - _mean))
-            _std = sum(_stdev) / len(_slopes)
-            _ret.append((_lane, _min, _max, _mean, _std))
+            _lane = '?'; _stdev = []
+            if _slopes:
+                for _slope in _slopes:
+                    if _slope < 0:
+                        _lane = 'right'
+                    else:
+                        _lane = 'left'
+                    _min = min(_slope, _min)
+                    _max = max(_slope, _max)
+                assert len(_slopes) != 0, 'no slopes found'
+                _mean = sum(_slopes) / len(_slopes)
+                for _slope in _slopes:
+                    _stdev.append(square(_slope - _mean))
+                assert len(_slopes) != 0, 'no slopes found'
+                _std = sum(_stdev) / len(_slopes)
+                _ret.append((_lane, _min, _max, _mean, _std))
+            else:
+                logger.warning('no slopes in input')
     except Exception as err:
-        logger.error('bad stats: %s', err)
+        logger.error('bad stats: %s in %s', err, slopes)
     return _ret
 
 
@@ -88,9 +93,10 @@ def find_dominate_signals(lines: ndarray,
         avg_slope = []
         for _, _, _, _mean, _ in slope_stats:
             avg_slope.append(abs(_mean))
+        assert len(avg_slope) != 0, 'no slopes found'
         mean_slope = float(sum(avg_slope) / len(avg_slope))
     except Exception as err:
-        logger.error('bad signal: %s', err)
+        logger.error('bad signal: %s in %s', err, _signals)
     return mean_slope, _signals
 
 
