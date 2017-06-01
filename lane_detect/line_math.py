@@ -123,7 +123,7 @@ def interpolate_dominate_lines(region_mask: array, signals: dict, mean_slope: fl
                     logger.debug('%s: %s\t %s: %s', (x1, y1), region_mask[y1][x1][0], (x2, y2), region_mask[y2][x2][0])
                     _offset = float(y1 / _slope - x1)
                     new_p1 = (int(lower_bound / _slope - _offset), lower_bound)
-                    new_p2 = (int((upper_bound - 1) / _slope - _offset), (upper_bound - 1))
+                    new_p2 = (int(upper_bound / _slope - _offset), upper_bound)
                     _slots[_line] = [_line, _slope, new_p1, new_p2]
     except Exception as err:
         logger.error('interpolation error: %s', err)
