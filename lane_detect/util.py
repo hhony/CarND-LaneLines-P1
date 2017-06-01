@@ -4,7 +4,7 @@ from numpy import array, ndarray, uint8, int32, pi, \
 from cv2 import Canny, GaussianBlur, HoughLinesP, \
     imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
     fillPoly, bitwise_and, addWeighted
-from lane_detect.line_math import find_dominate_signals, interpolate_dominate_lines, \
+from lane_detect.line_math import find_dominate_signals, find_mean_slope, interpolate_dominate_lines, \
     convert_lane_edges_to_polygons
 from lane_detect.log import logger
 
@@ -47,6 +47,8 @@ class LaneFilter(object):
         ], dtype=int32)
         self.left_lane  = None
         self.right_lane = None
+        self.roi_filter_lines = {}
+        self.slope_filter_lines = {}
 
     def grayscale(self, image=None, color_order=COLOR_RGB2GRAY) -> ndarray:
         '''
@@ -146,17 +148,27 @@ class LaneFilter(object):
             color = [255, 0, 0]
         # draw lines
         logger.debug('-------------------------------------------------------------')
-        # quantify signals
-        mean_slope, _signals = find_dominate_signals(lines)
         # use accumulated signals
-        region_mask = array(self.get_roi_mask(), dtype=bool)
-        lower_bound = int(y_height/2 + self.Y_OFFSET)
-        upper_bound = int(y_height - 1)
-        _slots = interpolate_dominate_lines(region_mask, _signals, mean_slope, lower_bound, upper_bound)
-        self.right_lane, self.left_lane = convert_lane_edges_to_polygons(_slots, lower_bound, upper_bound)
+        region_mask  = array(self.get_roi_mask(), dtype=bool)
+        upper_bound  = int(y_height - 1)
+        lower_bound  = int(upper_bound/2 + self.Y_OFFSET)
+        horizontal_limit = (x_width - 1)
+        # quantify signals
+        mean_slope = find_dominate_signals(lines, self.roi_filter_lines, region_mask)
+        mean_slope = find_mean_slope(self.roi_filter_lines, mean_slope)
+        # extend lines into lanes
+        interpolate_dominate_lines(self.roi_filter_lines, self.slope_filter_lines,
+                                   mean_slope, lower_bound, upper_bound, horizontal_limit)
+        self.right_lane, self.left_lane = convert_lane_edges_to_polygons(self.slope_filter_lines, lower_bound, upper_bound)
         # fill lane polygons on images
-        fillPoly(self.image_tf, int32([self.right_lane]), color)
-        fillPoly(self.image_tf, int32([self.left_lane]), color)
+        if self.right_lane.any():
+            fillPoly(self.image_tf, int32([self.right_lane]), color)
+        else:
+            logger.error('did not create right-side lane')
+        if self.left_lane.any():
+            fillPoly(self.image_tf, int32([self.left_lane]), color)
+        else:
+            logger.error('did not create left-side lane')
         return self.image_tf
 
     def hough_lines(self, rho: float, threshold: int, min_line_len: float, max_line_gap: float,
