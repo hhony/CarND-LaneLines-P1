@@ -43,7 +43,9 @@ def get_slope_stats(slopes: list) -> list:
             _lane = '?'; _stdev = []
             if _slopes:
                 for _slope in _slopes:
-                    if _slope < 0:
+                    if not _slope:
+                        continue
+                    elif _slope < 0:
                         _lane = 'right'
                     else:
                         _lane = 'left'
@@ -57,7 +59,7 @@ def get_slope_stats(slopes: list) -> list:
                 _std = sum(_stdev) / len(_slopes)
                 _ret.append((_lane, _min, _max, _mean, _std))
             else:
-                logger.warning('no slopes in input')
+                logger.debug('no slopes in input')
     except Exception as err:
         logger.error('bad stats: %s in %s', err, slopes)
     return _ret
