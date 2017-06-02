@@ -22,10 +22,11 @@ class LaneFilter(object):
             if isfile(filename):
                 if use_cv2_imread:
                     self.image = imread(filename)
+                    self.gray = self.grayscale(image=self.image, color_order=COLOR_BGR2GRAY)
                 else:
                     self.image = image_read(filename)
+                    self.gray = self.grayscale(image=self.image)
                 self.image_tf = zeros_like(self.image)
-                self.gray = self.grayscale(image=self.image, color_order=COLOR_BGR2GRAY)
                 self.mask = zeros_like(self.image)
                 self.lane = zeros_like(self.image)
             else:
@@ -213,13 +214,13 @@ class LaneFilter(object):
         self.lane = addWeighted(self.image, α, self.image_tf, β, λ)
         return self.lane
 
-    def save_image(self, filename: str, image=None):
+    def save_image(self, filename: str, image=None, gray=True):
         '''
         Save image to filename
         :param filename: str filename location
         :param image: ndarray image, default self.image_tf
         '''
         if count_nonzero(image):
-            image_save(filename, image)
+            image_save(filename, image, gray)
         else:
-            image_save(filename, self.image_tf)
+            image_save(filename, self.image_tf, gray)

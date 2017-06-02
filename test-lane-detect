@@ -58,7 +58,7 @@ if __name__ == '__main__':
             if args.show_pipeline:
                 show_image(filter.image_tf, gray=True)
             if args.save_images:
-                filter.save_image('{0}/gaussian_{1}'.format(output_dir, _f))
+                filter.save_image('{0}/gaussian_{1}'.format(output_dir, _f), gray=True)
             # canny
             filter.canny_edges(CANNY_LOWER_BOUND, CANNY_UPPER_BOUND)
             if args.show_pipeline:

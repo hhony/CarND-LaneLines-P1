@@ -13,5 +13,8 @@ def image_read(filename):
     return imread(filename)
 
 
-def image_save(filename, image):
-    imsave(filename, image)
+def image_save(filename, image, gray=False):
+    if gray:
+        imsave(filename, image, cmap='gray')
+    else:
+        imsave(filename, image)
