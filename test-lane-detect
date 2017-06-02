@@ -14,7 +14,7 @@ if __name__ == '__main__':
     HOUGH_LINE_GAP    = 10
 
     parser = argparse.ArgumentParser(
-        description='utility for ensuring knit embedded app is installed and running')
+        description='utility for testing lane_detect module')
     parser.add_argument(
         '-d', '--debug', '--debug-mode', '--dev', '--dev-mode',
         dest='is_debug', action='store_true',
