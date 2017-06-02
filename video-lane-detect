@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+from moviepy.editor import VideoFileClip
+from lane_detect import LaneFilter, logger
+from os import makedirs
+from os.path import isdir
+
+CANNY_LOWER_BOUND = 50
+CANNY_UPPER_BOUND = 150
+HOUGH_RHO         = 2
+HOUGH_THRESH      = 15
+HOUGH_LINE_LEN    = 40
+HOUGH_LINE_GAP    = 10
+
+def process_image(image):
+    global CANNY_LOWER_BOUND, CANNY_UPPER_BOUND
+    global HOUGH_RHO, HOUGH_THRESH, HOUGH_LINE_LEN, HOUGH_LINE_GAP
+    filter = LaneFilter(image=image)
+    filter.gaussian_blur()
+    filter.canny_edges(CANNY_LOWER_BOUND, CANNY_UPPER_BOUND)
+    filter.hough_lines(rho=HOUGH_RHO, threshold=HOUGH_THRESH,
+                       min_line_len=HOUGH_LINE_LEN, max_line_gap=HOUGH_LINE_GAP,
+                       with_lines=True)
+    filter.apply_roi_mask()
+    filter.weighted_image()
+    return filter.lane
+
+if __name__ == '__main__':
+    try:
+        output_dir = 'test_videos_output'
+        _files = ['solidWhiteRight.mp4', 'solidYellowLeft.mp4', 'challenge.mp4']
+        for _file in _files:
+            if not isdir(output_dir):
+                makedirs(output_dir)
+            white_output = '{0}/{1}'.format(output_dir, _file)
+            clip1 = VideoFileClip('test_videos/{0}'.format(_file))
+            white_clip = clip1.fl_image(process_image)  # NOTE: this function expects color images!!
+            white_clip.write_videofile(white_output, audio=False)
+    except Exception as err:
+        logger.error('caught exception: %s', err)
