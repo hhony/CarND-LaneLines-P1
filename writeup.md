@@ -6,8 +6,8 @@ In this project, I created a pipeline to find lane on a road. The focus of the p
 
 [//]: # (Image References)
 
-[image1]: ./examples/grayscale.jpg "grayscale"
-[image2]: ./test_images_output/begin_solidYellowCurve2.jpg "begin"
+[image1]: ./test_images_output/begin_solidYellowCurve2.jpg "begin"
+[image2]: ./test_images_output/gaussian_solidYellowCurve2.jpg "grayscale"
 [image3]: ./test_images_output/canny_solidYellowCurve2.jpg "canny"
 [image4]: ./test_images_output/hough_solidYellowCurve2.jpg "hough"
 [image5]: ./test_images_output/roi_solidYellowCurve2.jpg "roi"
@@ -42,11 +42,11 @@ filter.weighted_image()
     * Store original image untouched for later overlay
     * Create copies for transform, mask, and grayscale
     * I also created an output storage copy
-![alt text][image2]
+![alt text][image1]
     
 2) Apply gaussian to grayscale image
     * Introducing noise help pronouce dominate features, and mutes textures
-![alt text][image1]
+![alt text][image2]
 
 3) Apply Canny edge detection to gaussian grayscale
     * This performs the most work to isolate features
