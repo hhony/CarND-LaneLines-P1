@@ -6,11 +6,12 @@ from cv2 import Canny, GaussianBlur, HoughLinesP, \
     fillPoly, bitwise_and, addWeighted
 from lane_detect.line_math import find_dominate_signals, find_mean_slope, interpolate_dominate_lines, \
     convert_lane_edges_to_polygons
+from lane_detect.plot import image_read
 from lane_detect.log import logger
 
 
 class LaneFilter(object):
-    def __init__(self, image=None, filename=None):
+    def __init__(self, image=None, filename=None, use_cv2_imread=False):
         '''
         LaneFilter will perform image transforms on itself
         :param image: <numpy.ndarray>
@@ -19,7 +20,10 @@ class LaneFilter(object):
         if filename:
             assert issubclass(str, type(filename)), 'image path must be <str>'
             if isfile(filename):
-                self.image = imread(filename)
+                if use_cv2_imread:
+                    self.image = imread(filename)
+                else:
+                    self.image = image_read(filename)
                 self.image_tf = zeros_like(self.image)
                 self.gray = self.grayscale(image=self.image, color_order=COLOR_BGR2GRAY)
                 self.mask = zeros_like(self.image)
