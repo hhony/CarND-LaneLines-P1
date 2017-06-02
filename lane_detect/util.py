@@ -6,7 +6,7 @@ from cv2 import Canny, GaussianBlur, HoughLinesP, \
     fillPoly, bitwise_and, addWeighted
 from lane_detect.line_math import find_dominate_signals, find_mean_slope, interpolate_dominate_lines, \
     convert_lane_edges_to_polygons
-from lane_detect.plot import image_read
+from lane_detect.plot import image_read, image_save
 from lane_detect.log import logger
 
 
@@ -212,3 +212,14 @@ class LaneFilter(object):
         assert self.image_tf.shape == self.image.shape, 'must be same shape!'
         self.lane = addWeighted(self.image, α, self.image_tf, β, λ)
         return self.lane
+
+    def save_image(self, filename: str, image=None):
+        '''
+        Save image to filename
+        :param filename: str filename location
+        :param image: ndarray image, default self.image_tf
+        '''
+        if count_nonzero(image):
+            image_save(filename, image)
+        else:
+            image_save(filename, self.image_tf)

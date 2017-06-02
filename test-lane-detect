@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-from os import listdir
+from os import listdir, makedirs
+from os.path import isdir
 from lane_detect import LaneFilter, show_image, \
     logger, set_debug_flag
 
@@ -29,31 +30,60 @@ if __name__ == '__main__':
         dest='show_lines', action='store_true',
         help='show hough lines stages'
     )
+    parser.add_argument(
+        '--save-images',
+        dest='save_images', action='store_true',
+        help='saves images to output directory'
+    )
     parser.parse_args()
     args = parser.parse_args()
     if args.is_debug:
         set_debug_flag()
     try:
         _files = listdir('test_images')
+        # create output dir
+        if args.save_images:
+            output_dir = 'test_images_output'
+            if not isdir(output_dir):
+                makedirs(output_dir)
+        # run test_images
         for _f in _files:
             filter = LaneFilter(filename='test_images/{0}'.format(_f))
             if args.show_pipeline:
                 show_image(filter.image, gray=True)
+            if args.save_images:
+                filter.save_image('{0}/begin_{1}'.format(output_dir, _f), filter.image)
+            # gaussian
             filter.gaussian_blur()
             if args.show_pipeline:
                 show_image(filter.image_tf, gray=True)
+            if args.save_images:
+                filter.save_image('{0}/gaussian_{1}'.format(output_dir, _f))
+            # canny
             filter.canny_edges(CANNY_LOWER_BOUND, CANNY_UPPER_BOUND)
             if args.show_pipeline:
                 show_image(filter.image_tf, gray=True)
+            if args.save_images:
+                filter.save_image('{0}/canny_{1}'.format(output_dir, _f))
+            # hough
             filter.hough_lines(rho=HOUGH_RHO, threshold=HOUGH_THRESH,
                                min_line_len=HOUGH_LINE_LEN, max_line_gap=HOUGH_LINE_GAP,
                                with_lines=True)
             if args.show_pipeline or args.show_lines:
                 show_image(filter.image_tf)
+            if args.save_images:
+                filter.save_image('{0}/hough_{1}'.format(output_dir, _f))
+            # apply ROI
             filter.apply_roi_mask()
             if args.show_pipeline or args.show_lines:
                 show_image(filter.image_tf)
+            if args.save_images:
+                filter.save_image('{0}/roi_{1}'.format(output_dir, _f))
+            # overlay
             filter.weighted_image()
             show_image(filter.lane)
+            if args.save_images:
+                filter.save_image('{0}/end_{1}'.format(output_dir, _f), filter.lane)
+
     except Exception as err:
         logger.error('caught exception: %s', err)
