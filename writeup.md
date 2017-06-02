@@ -1,12 +1,6 @@
 # **Finding Lane Lines on the Road** 
 
-## Writeup Template
-
-### You can use this file as a template for your writeup if you want to submit it as a markdown file. But feel free to use some other method and submit a pdf if you prefer.
-
 ---
-
-**Finding Lane Lines on the Road**
 
 In this project, I created a pipeline to find lane on a road. The focus of the project was to make use of dominant signals within the image to bias lane construction. Also the focus intended to identify straight stretches of road with occluded areas.
 
