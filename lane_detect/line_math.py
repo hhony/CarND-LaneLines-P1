@@ -111,7 +111,7 @@ def find_dominate_signals(lines: ndarray, signals: dict, region_mask: array,
                     continue
                 slope = (y2 - y1) / (x2 - x1)
                 assert slope != 0, 'slope is zero {0}'.format(_line)
-                offset = (y1 / slope) - x1
+                offset = y1 - (x1 * slope)
                 magnitude = sqrt((square(x2 - x1) + square(y2 - y1)))
                 abs_slope = abs(slope)
                 if magnitude > magnitude_thresh and abs_slope > slope_thresh and abs_slope < slope_max_cutoff:
@@ -185,8 +185,8 @@ def interpolate_dominate_lines(signals: dict, interpolations: dict,
             if delta < slope_variance:
                 logger.debug('%s\t %s', (x1, y1), (x2, y2))
                 assert _slope != 0, 'slope is zero in signals'
-                new_p1 = (int(lower_bound / _slope - _offset), lower_bound)
-                new_p2 = (int(upper_bound / _slope - _offset), upper_bound)
+                new_p1 = (int((lower_bound - _offset) / _slope), lower_bound)
+                new_p2 = (int((upper_bound - _offset) / _slope), upper_bound)
                 is_valid = True
                 for _x, _y in [new_p1, new_p2]:
                     if _x < 0:
