@@ -53,8 +53,6 @@ if __name__ == '__main__':
             filter.apply_roi_mask()
             if args.show_pipeline or args.show_lines:
                 show_image(filter.image_tf)
-            if args.show_pipeline:
-                show_image(filter.image_tf)
             filter.weighted_image()
             show_image(filter.lane)
     except Exception as err:
