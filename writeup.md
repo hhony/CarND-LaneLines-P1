@@ -9,9 +9,10 @@ In this project, I created a pipeline to find lane on a road. The focus of the p
 [image1]: ./test_images_output/begin_solidYellowCurve2.jpg "begin"
 [image2]: ./test_images_output/gaussian_solidYellowCurve2.jpg "grayscale"
 [image3]: ./test_images_output/canny_solidYellowCurve2.jpg "canny"
-[image4]: ./test_images_output/hough_solidYellowCurve2.jpg "hough"
-[image5]: ./test_images_output/roi_solidYellowCurve2.jpg "roi"
-[image6]: ./test_images_output/end_solidYellowCurve2.jpg "end"
+[image4]: ./test_images_output/example_solidYellowCurve2.jpg "hough raw output"
+[image5]: ./test_images_output/hough_solidYellowCurve2.jpg "hough filtered output"
+[image6]: ./test_images_output/roi_solidYellowCurve2.jpg "roi"
+[image7]: ./test_images_output/end_solidYellowCurve2.jpg "end"
 
 ---
 
@@ -59,12 +60,16 @@ filter.weighted_image()
     * I added `land_detect/line_math.py` to maintain all the line/slope/interpolation/filtering
 ![alt text][image4]
 
-5) Apply the Region of Interest (ROI) mask
-    * I maintained a pyramid shape, with a flat top as the default roi shape, inside `LaneFilter.__init__`
+becomes..
+
 ![alt text][image5]
 
-6) Apply the weighted image using original, mask and transform combination
+5) Apply the Region of Interest (ROI) mask
+    * I maintained a pyramid shape, with a flat top as the default roi shape, inside `LaneFilter.__init__`
 ![alt text][image6]
+
+6) Apply the weighted image using original, mask and transform combination
+![alt text][image7]
 
 #### Logic around annotations
 
