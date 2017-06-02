@@ -1,6 +1,6 @@
 from os.path import isfile
 from numpy import array, ndarray, uint8, int32, pi, \
-    zeros, zeros_like
+    zeros, zeros_like, count_nonzero
 from cv2 import Canny, GaussianBlur, HoughLinesP, \
     imread, cvtColor, COLOR_BGR2GRAY, COLOR_RGB2GRAY, \
     fillPoly, bitwise_and, addWeighted
@@ -25,8 +25,9 @@ class LaneFilter(object):
                 self.mask = zeros_like(self.image)
                 self.lane = zeros_like(self.image)
             else:
-                RuntimeError('{0} not found.'.format(filename))
-        elif image:
+                msg = '{0} not found.'.format(filename)
+                RuntimeError(msg)
+        elif count_nonzero(image):
             assert issubclass(ndarray, type(image)), 'image must be <numpy.ndarray>'
             self.image = image
             self.image_tf = zeros_like(self.image)
