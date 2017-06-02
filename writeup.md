@@ -110,5 +110,5 @@ I believe the following improvements can be made:
 1) As mentioned above, the use of `sin` and `cos`, rather than naive assumtion that all roads are straight.
 2) Correlate Hough line segments relative to ROI center.
 3) Implement a confidence filter on top of the pipeline, so that missing lanes may be approximated based on the prior.
-4) Add test cases for occultions (semi-trucks, road signs, etc..), shadows, and other obstructions which may falsely influence the annotation.
+4) Add test cases for occulsions (semi-trucks, road signs, etc..), shadows, and other obstructions which may falsely influence the annotation.
 5) Iterate, iterate, iterate..
